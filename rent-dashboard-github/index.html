@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="sk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rent Intelligence Dashboard - Slovakia</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    :root{
+      --bg:#f4f7fb;--panel:#ffffff;--panel2:#f8fafc;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;
+      --accent:#2563eb;--accent2:#0ea5e9;--good:#059669;--warn:#d97706;--bad:#dc2626;--shadow:0 18px 45px rgba(15,23,42,.08);
+    }
+    [data-theme="dark"]{--bg:#0b1120;--panel:#111827;--panel2:#0f172a;--text:#e5e7eb;--muted:#94a3b8;--line:#1f2937;--shadow:0 18px 45px rgba(0,0,0,.35)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    header{position:sticky;top:0;z-index:10;background:linear-gradient(135deg,#0f172a,#1d4ed8);color:white;padding:22px 28px;box-shadow:var(--shadow)}
+    .header-row{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    h1{margin:0;font-size:25px;letter-spacing:-.02em}.subtitle{opacity:.86;margin-top:5px;font-size:14px}.toolbar{display:flex;gap:10px;flex-wrap:wrap}
+    button,.btn{border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);color:inherit;border-radius:12px;padding:10px 12px;cursor:pointer;font-weight:650;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+    button:hover,.btn:hover{background:rgba(255,255,255,.2)}
+    main{max-width:1520px;margin:0 auto;padding:22px}.notice{background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;border-radius:14px;padding:12px 14px;margin-bottom:16px;display:none}
+    [data-theme="dark"] .notice{background:#431407;color:#fed7aa;border-color:#7c2d12}
+    .filters{display:grid;grid-template-columns:repeat(8,minmax(130px,1fr));gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow);margin-bottom:18px}
+    .field label{display:block;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+    select,input{width:100%;height:42px;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:12px;padding:0 11px;outline:none} input[type="search"]{padding-left:12px}
+    .kpis{display:grid;grid-template-columns:repeat(6,minmax(160px,1fr));gap:14px;margin-bottom:18px}.kpi{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow);position:relative;overflow:hidden}.kpi:after{content:"";position:absolute;right:-22px;top:-35px;width:95px;height:95px;background:linear-gradient(135deg,rgba(37,99,235,.18),rgba(14,165,233,.08));border-radius:50%}.kpi .label{font-size:12px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.06em}.kpi .value{font-size:27px;font-weight:850;margin-top:8px;letter-spacing:-.03em}.kpi .hint{font-size:12px;color:var(--muted);margin-top:6px}
+    .grid{display:grid;grid-template-columns:1.35fr .9fr;gap:18px;margin-bottom:18px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow);min-height:310px}.panel h2{font-size:16px;margin:0 0 14px}.chart-wrap{height:320px}.chart-wrap.small{height:270px}
+    .table-panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}.table-head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;padding:16px;border-bottom:1px solid var(--line)}.table-head h2{margin:0;font-size:16px}.table-meta{color:var(--muted);font-size:13px}
+    .table-wrap{overflow:auto;max-height:620px}table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th,td{border-bottom:1px solid var(--line);padding:11px 10px;text-align:left;white-space:nowrap}th{position:sticky;top:0;background:var(--panel2);z-index:2;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em}tbody tr:hover{background:rgba(37,99,235,.06)}.title-cell{white-space:normal;min-width:280px;max-width:470px;font-weight:700}.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 8px;background:rgba(37,99,235,.1);color:#1d4ed8;font-weight:750}[data-theme="dark"] .pill{color:#93c5fd;background:rgba(37,99,235,.18)}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}.footer{color:var(--muted);font-size:12px;margin-top:16px;line-height:1.6}
+    @media(max-width:1200px){.filters{grid-template-columns:repeat(4,1fr)}.kpis{grid-template-columns:repeat(3,1fr)}.grid,.grid3{grid-template-columns:1fr}}
+    @media(max-width:720px){header{padding:18px}main{padding:14px}.filters{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}.chart-wrap{height:300px}.toolbar{width:100%}.toolbar button,.toolbar .btn{flex:1;justify-content:center}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="header-row">
+    <div>
+      <h1>Rent Intelligence Dashboard - Slovakia</h1>
+      <div class="subtitle">Interaktivny prehlad prenajmov bytov podla mesta, stvrte a izbovosti. Data sa citaju z <b>data/offers.json</b>.</div>
+    </div>
+    <div class="toolbar">
+      <button id="themeBtn" type="button">Dark mode</button>
+      <button id="csvBtn" type="button">Export CSV</button>
+      <a class="btn" href="https://www.nehnutelnosti.sk/vysledky/3-izbove-byty/bratislava/prenajom" target="_blank" rel="noreferrer">Zdroj</a>
+    </div>
+  </div>
+</header>
+<main>
+  <div id="notice" class="notice"></div>
+  <section class="filters">
+    <div class="field"><label>Mesto</label><select id="cityFilter"></select></div>
+    <div class="field"><label>Stvrt / cast</label><select id="districtFilter"></select></div>
+    <div class="field"><label>Izbovost</label><select id="roomFilter"></select></div>
+    <div class="field"><label>Min cena</label><input id="minPrice" type="number" min="0" step="50" placeholder="0"></div>
+    <div class="field"><label>Max cena</label><input id="maxPrice" type="number" min="0" step="50" placeholder="bez limitu"></div>
+    <div class="field"><label>Min m2</label><input id="minSize" type="number" min="0" step="5" placeholder="0"></div>
+    <div class="field"><label>Zoradenie</label><select id="sortFilter"><option value="price_asc">Cena od najnizsej</option><option value="price_desc">Cena od najvyssej</option><option value="ppm_asc">EUR/m2 od najnizsej</option><option value="ppm_desc">EUR/m2 od najvyssej</option><option value="newest">Najnovsie v datach</option></select></div>
+    <div class="field"><label>Top N</label><select id="topFilter"><option value="0">Vsetko</option><option value="10">Top 10</option><option value="25">Top 25</option><option value="50">Top 50</option><option value="100">Top 100</option></select></div>
+    <div class="field" style="grid-column:span 2"><label>Vyhladavanie</label><input id="searchFilter" type="search" placeholder="ulica, titulok, mesto, agentura..."></div>
+  </section>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="grid">
+    <div class="panel"><h2>Priemerna cena podla stvrte / mesta</h2><div class="chart-wrap"><canvas id="districtChart"></canvas></div></div>
+    <div class="panel"><h2>Rozdelenie podla izbovosti</h2><div class="chart-wrap"><canvas id="roomsChart"></canvas></div></div>
+  </section>
+
+  <section class="grid3">
+    <div class="panel"><h2>Rozdelenie cien</h2><div class="chart-wrap small"><canvas id="histChart"></canvas></div></div>
+    <div class="panel"><h2>Cena vs. vymera</h2><div class="chart-wrap small"><canvas id="scatterChart"></canvas></div></div>
+    <div class="panel"><h2>Najlacnejsie ponuky</h2><div class="chart-wrap small"><canvas id="topChart"></canvas></div></div>
+  </section>
+
+  <section class="table-panel">
+    <div class="table-head">
+      <h2>Ponuky</h2>
+      <div class="table-meta" id="tableMeta"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Ponuka</th><th>Mesto</th><th>Stvrt</th><th>Izby</th><th>Cena</th><th>m2</th><th>EUR/m2</th><th>Adresa</th><th>Link</th></tr></thead>
+        <tbody id="offerBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="footer" id="footerInfo"></div>
+</main>
+<script>
+const fallbackData={
+  meta:{generated_at:"sample",source:"fallback",note:"Ukazkove data. Spusti scraper pre realne data."},
+  offers:[
+    {id:"s1",title:"3 izbovy byt City Park Ruzinov",city:"Bratislava",district:"Ruzinov",rooms:"3",price_eur:1150,size_m2:72.8,price_per_m2:15.79,address:"Plynarenska, Bratislava-Ruzinov",url:"https://www.nehnutelnosti.sk/vysledky/3-izbove-byty/bratislava-ruzinov/prenajom",scraped_at:"sample"},
+    {id:"s2",title:"3 izbovy byt Stare Mesto",city:"Bratislava",district:"Stare Mesto",rooms:"3",price_eur:1450,size_m2:86,price_per_m2:16.86,address:"Bratislava-Stare Mesto",url:"https://www.nehnutelnosti.sk/vysledky/3-izbove-byty/bratislava-stare-mesto/prenajom",scraped_at:"sample"},
+    {id:"s3",title:"2 izbovy byt Petrzalka",city:"Bratislava",district:"Petrzalka",rooms:"2",price_eur:780,size_m2:56,price_per_m2:13.93,address:"Bratislava-Petrzalka",url:"https://www.nehnutelnosti.sk/vysledky/2-izbove-byty/bratislava-petrzalka/prenajom",scraped_at:"sample"},
+    {id:"s4",title:"1 izbovy byt Kosice Stare Mesto",city:"Kosice",district:"Stare Mesto",rooms:"1",price_eur:620,size_m2:38,price_per_m2:16.32,address:"Kosice-Stare Mesto",url:"https://www.nehnutelnosti.sk/vysledky/1-izbove-byty/kosice-stare-mesto/prenajom",scraped_at:"sample"},
+    {id:"s5",title:"3 izbovy byt Kosice Zapad",city:"Kosice",district:"Zapad",rooms:"3",price_eur:950,size_m2:77,price_per_m2:12.34,address:"Kosice-Zapad",url:"https://www.nehnutelnosti.sk/vysledky/3-izbove-byty/kosice-zapad/prenajom",scraped_at:"sample"}
+  ]
+};
+let rawOffers=[],filtered=[],charts={};
+const eur=new Intl.NumberFormat('sk-SK',{style:'currency',currency:'EUR',maximumFractionDigits:0});
+const num=new Intl.NumberFormat('sk-SK',{maximumFractionDigits:1});
+const ids=['cityFilter','districtFilter','roomFilter','minPrice','maxPrice','minSize','sortFilter','topFilter','searchFilter'];
+const $=id=>document.getElementById(id);
+function clean(v){return (v??'').toString().trim()}
+function money(v){return Number.isFinite(+v)?eur.format(+v):'-'}
+function median(arr){if(!arr.length)return null;const s=[...arr].sort((a,b)=>a-b);const m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2}
+function avg(arr){return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null}
+function groupBy(arr,keyFn){return arr.reduce((m,x)=>{const k=keyFn(x)||'Nezname';(m[k]||(m[k]=[])).push(x);return m},{})}
+function destroy(name){if(charts[name]){charts[name].destroy();charts[name]=null}}
+function labelsUnique(values){return ['Vsetko',...Array.from(new Set(values.filter(Boolean))).sort((a,b)=>a.localeCompare(b,'sk'))]}
+function setOptions(selectId,values,current){const el=$(selectId);el.innerHTML='';values.forEach(v=>{const o=document.createElement('option');o.value=v==='Vsetko'?'':v;o.textContent=v;el.appendChild(o)});if(current!==undefined)el.value=current}
+async function loadData(){
+  try{
+    const res=await fetch('data/offers.json',{cache:'no-store'});
+    if(!res.ok)throw new Error('offers.json not found');
+    const data=await res.json();
+    rawOffers=(data.offers||[]).map(normalizeOffer);
+    $('footerInfo').textContent=`Data source: data/offers.json | Generated: ${data.meta?.generated_at||'unknown'} | Offers: ${rawOffers.length}`;
+    if(data.meta?.sample){$('notice').style.display='block';$('notice').innerHTML='Dashboard zatial cita ukazkovy subor <b>data/offers.json</b>. Po nahrati na GitHub spusti workflow <b>Update rent data</b>, ktory ho prepise aktualnymi ponukami.';}
+    if(!rawOffers.length)throw new Error('offers.json is empty');
+  }catch(e){
+    rawOffers=fallbackData.offers.map(normalizeOffer);
+    $('notice').style.display='block';
+    $('notice').innerHTML='Dashboard bezi s ukazkovymi datami. Po nahrati na GitHub spusti workflow <b>Update rent data</b>, ktory vytvori realny subor <b>data/offers.json</b>.';
+    $('footerInfo').textContent='Sample mode - realne data este nie su nacitane.';
+  }
+  initFilters();render();
+}
+function normalizeOffer(o){
+  const price=+o.price_eur||null;const size=+o.size_m2||null;const ppm=+o.price_per_m2||(price&&size?price/size:null);
+  return {...o,city:clean(o.city)||'Nezname',district:clean(o.district)||'Bez stvrte',rooms:clean(o.rooms)||'?',price_eur:price,size_m2:size,price_per_m2:ppm,title:clean(o.title)||'Bez nazvu',address:clean(o.address),url:clean(o.url)};
+}
+function initFilters(){
+  setOptions('cityFilter',labelsUnique(rawOffers.map(x=>x.city)));
+  updateDistrictOptions();
+  setOptions('roomFilter',labelsUnique(rawOffers.map(x=>x.rooms).sort((a,b)=>roomSort(a)-roomSort(b))));
+  ids.forEach(id=>$(id).addEventListener('input',()=>{if(id==='cityFilter')updateDistrictOptions();render()}));
+}
+function updateDistrictOptions(){
+  const city=$('cityFilter').value;
+  const vals=rawOffers.filter(x=>!city||x.city===city).map(x=>x.district);
+  const current=$('districtFilter').value;
+  setOptions('districtFilter',labelsUnique(vals),current);
+}
+function roomSort(r){if(r==='garsonka')return 0;if(r==='5+')return 6;return parseInt(r,10)||9}
+function applyFilters(){
+  const city=$('cityFilter').value,dist=$('districtFilter').value,room=$('roomFilter').value,q=$('searchFilter').value.toLowerCase();
+  const minP=+$('minPrice').value||0,maxP=+$('maxPrice').value||Infinity,minS=+$('minSize').value||0;
+  let arr=rawOffers.filter(o=>(!city||o.city===city)&&(!dist||o.district===dist)&&(!room||o.rooms===room)&&(!o.price_eur||o.price_eur>=minP)&&(!o.price_eur||o.price_eur<=maxP)&&(!o.size_m2||o.size_m2>=minS));
+  if(q)arr=arr.filter(o=>[o.title,o.city,o.district,o.address,o.agency].join(' ').toLowerCase().includes(q));
+  const sort=$('sortFilter').value;
+  arr.sort((a,b)=>sort==='price_desc'?(b.price_eur||0)-(a.price_eur||0):sort==='ppm_asc'?(a.price_per_m2||999999)-(b.price_per_m2||999999):sort==='ppm_desc'?(b.price_per_m2||0)-(a.price_per_m2||0):sort==='newest'?String(b.scraped_at||'').localeCompare(String(a.scraped_at||'')):(a.price_eur||999999)-(b.price_eur||999999));
+  const top=+$('topFilter').value||0;if(top)arr=arr.slice(0,top);
+  return arr;
+}
+function render(){filtered=applyFilters();renderKpis();renderCharts();renderTable();}
+function renderKpis(){
+  const prices=filtered.map(x=>x.price_eur).filter(Boolean),ppms=filtered.map(x=>x.price_per_m2).filter(Boolean),sizes=filtered.map(x=>x.size_m2).filter(Boolean);
+  const cheapest=filtered.find(x=>x.price_eur);const cities=new Set(filtered.map(x=>x.city)).size;const districts=new Set(filtered.map(x=>x.city+'|'+x.district)).size;
+  const data=[['Ponuky',filtered.length,`${cities} miest / ${districts} stvrti`],['Priemer',avg(prices)?money(avg(prices)):'-',`median ${median(prices)?money(median(prices)):'-'}`],['EUR/m2',avg(ppms)?num.format(avg(ppms))+' EUR':'-',`median ${median(ppms)?num.format(median(ppms))+' EUR':'-'}`],['Priemer m2',avg(sizes)?num.format(avg(sizes))+' m2':'-','vymera'],['Najlacnejsia',cheapest?money(cheapest.price_eur):'-',cheapest?`${cheapest.city} - ${cheapest.district}`:'-'],['Rozpatie',prices.length?`${money(Math.min(...prices))} - ${money(Math.max(...prices))}`:'-','min - max']];
+  $('kpis').innerHTML=data.map(x=>`<div class="kpi"><div class="label">${x[0]}</div><div class="value">${x[1]}</div><div class="hint">${x[2]}</div></div>`).join('');
+}
+function renderCharts(){
+  const labelKey=o=>$('districtFilter').value?o.address:($('cityFilter').value?o.district:o.city);
+  const g=groupBy(filtered.filter(x=>x.price_eur),labelKey);let rows=Object.entries(g).map(([k,v])=>({k,avg:avg(v.map(x=>x.price_eur)),n:v.length})).sort((a,b)=>b.avg-a.avg).slice(0,20);
+  destroy('district');charts.district=new Chart($('districtChart'),{type:'bar',data:{labels:rows.map(x=>x.k),datasets:[{label:'Priemerna cena',data:rows.map(x=>Math.round(x.avg))}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v+' EUR'}}}}});
+  const rg=groupBy(filtered,o=>o.rooms);rows=Object.entries(rg).sort((a,b)=>roomSort(a[0])-roomSort(b[0]));destroy('rooms');charts.rooms=new Chart($('roomsChart'),{type:'doughnut',data:{labels:rows.map(x=>x[0]),datasets:[{data:rows.map(x=>x[1].length)}]},options:{responsive:true,maintainAspectRatio:false}});
+  renderHistogram();renderScatter();renderTop();
+}
+function renderHistogram(){
+  const prices=filtered.map(x=>x.price_eur).filter(Boolean);let bins={};prices.forEach(p=>{const b=Math.floor(p/200)*200;bins[`${b}-${b+199}`]=(bins[`${b}-${b+199}`]||0)+1});const rows=Object.entries(bins).sort((a,b)=>parseInt(a[0])-parseInt(b[0]));destroy('hist');charts.hist=new Chart($('histChart'),{type:'bar',data:{labels:rows.map(x=>x[0]),datasets:[{label:'Pocet',data:rows.map(x=>x[1])}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+}
+function renderScatter(){
+  const points=filtered.filter(x=>x.price_eur&&x.size_m2).map(x=>({x:x.size_m2,y:x.price_eur,label:x.title}));destroy('scatter');charts.scatter=new Chart($('scatterChart'),{type:'scatter',data:{datasets:[{label:'Ponuka',data:points}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{title:{display:true,text:'m2'}},y:{title:{display:true,text:'EUR'}}}}});
+}
+function renderTop(){
+  const rows=filtered.filter(x=>x.price_eur).slice().sort((a,b)=>a.price_eur-b.price_eur).slice(0,10).reverse();destroy('top');charts.top=new Chart($('topChart'),{type:'bar',data:{labels:rows.map(x=>`${x.city} ${x.district}`),datasets:[{label:'Cena',data:rows.map(x=>x.price_eur)}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+}
+function renderTable(){
+  $('tableMeta').textContent=`Zobrazenych ${filtered.length} z ${rawOffers.length} ponuk`;
+  $('offerBody').innerHTML=filtered.map((o,i)=>`<tr><td>${i+1}</td><td class="title-cell">${escapeHtml(o.title)}</td><td>${escapeHtml(o.city)}</td><td><span class="pill">${escapeHtml(o.district)}</span></td><td>${escapeHtml(o.rooms)}</td><td><b>${money(o.price_eur)}</b></td><td>${o.size_m2?num.format(o.size_m2):'-'}</td><td>${o.price_per_m2?num.format(o.price_per_m2):'-'}</td><td>${escapeHtml(o.address)}</td><td>${o.url?`<a href="${o.url}" target="_blank" rel="noreferrer">otvorit</a>`:'-'}</td></tr>`).join('');
+}
+function escapeHtml(s){return clean(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function exportCsv(){
+  const cols=['title','city','district','rooms','price_eur','size_m2','price_per_m2','address','url'];
+  const lines=[cols.join(',')].concat(filtered.map(o=>cols.map(c=>'"'+clean(o[c]).replaceAll('"','""')+'"').join(',')));
+  const blob=new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='filtered_offers.csv';a.click();URL.revokeObjectURL(url);
+}
+$('themeBtn').onclick=()=>{document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark'};
+$('csvBtn').onclick=exportCsv;
+loadData();
+</script>
+</body>
+</html>
